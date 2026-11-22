@@ -7,7 +7,7 @@ a CNN predicts the move a human in that band would play, as a probability distri
 
 | Path | Contents |
 | --- | --- |
-| `notebooks/aps360_progress.ipynb` | **v2** progress pipeline (current). Run top to bottom on a Colab T4 GPU, about 60–80 min. Writes figures, `results.json`, `numbers.tex` and model weights to `progress_outputs.zip`. |
+| `notebooks/aps360_progress.ipynb` | **v2** progress pipeline (current). Run top to bottom on a Colab T4 GPU, about 45–60 min. Datasets and trained models are checkpointed to Google Drive, so after a disconnect, Run all resumes where it stopped. Writes figures, `results.json`, `numbers.tex` and model weights to `progress_outputs.zip`. |
 | `notebooks/aps360_progress_v1.ipynb` | v1 pipeline that produced `results/progress_v1` and `figures/progress_v1`. |
 | `results/progress_v1/` | v1 run: every number (`results.json`) and LaTeX macros (`numbers.tex`). |
 | `figures/progress_v1/` | v1 figures. |
@@ -20,7 +20,7 @@ a CNN predicts the move a human in that band would play, as a probability distri
 | --- | --- |
 | CNN overfit after epoch 3 (val loss 2.39 → 3.51); 97% of its 8.6M parameters sat in one 2048→4096 FC layer | Residual CNN (6 blocks, 128 channels) with a fully convolutional from–to policy head, about 2.0M parameters; cosine LR decay; v1 still trained for comparison |
 | Band input did not help (31.4% with band vs 32.5% without; shuffled band 31.2%), single seed | 3 seeds per variant, paired game-bootstrap CI on the band gain, band-X-tested-on-band-Y matrix, mean (not only max) band effect |
-| 349k positions vs ~2M planned; all games from the first hours of 1 Jan | 12,000 games per band, each eligible game kept with probability 0.25 to widen the time window; time span recorded |
+| 349k positions vs ~2M planned; all games from the first hours of 1 Jan | 8,000 games per band, each eligible game kept with probability 0.25 to widen the time window; time span recorded |
 | Split by game only | Hashed player IDs; accuracy reported separately for test games whose players never appear in training |
 | Figures 11 in wide (fonts ~4 pt in the report), legend over bars | Figures drawn at 5.5 in (ICLR text width), 7–8 pt fonts, legends outside, kept epoch marked; PDF and PNG |
 
