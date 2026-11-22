@@ -1,0 +1,54 @@
+% Model diagrams for the progress report.
+% Preamble needs:  \usepackage{tikz}  \usetikzlibrary{positioning,arrows.meta}
+% and \input{numbers.tex} (from results/progress/) for the parameter counts.
+\tikzset{
+  blk/.style={draw, rounded corners=2pt, align=center, font=\scriptsize, minimum height=8mm, inner sep=2pt},
+  io/.style={blk, fill=gray!10},
+  conv/.style={blk, fill=orange!15},
+  lin/.style={blk, fill=blue!10},
+  out/.style={blk, fill=red!8},
+  arr/.style={-{Stealth[length=1.6mm]}, thick},
+}
+
+% ---------- Baselines ----------
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=3.5mm]
+  \node[io] (in) {Board\\$22{\times}8{\times}8$};
+  % heuristic
+  \node[blk, right=6mm of in, yshift=7mm, fill=gray!20, text width=34mm] (h)
+    {\textbf{Capture heuristic} (no learning):\\capture highest-value piece,\\else random legal move};
+  % linear
+  \node[lin, right=6mm of in, yshift=-7mm] (fl) {Flatten\\1408};
+  \node[lin, right=of fl] (fc) {Linear\\$1408{\to}128$};
+  \node[lin, right=of fc, text width=19mm] (sum) {$s(f,t)=a_f+b_t$\\(64 from + 64 to)};
+  \node[out, right=7mm of sum, yshift=7mm] (o) {Mask illegal\\$\to$ softmax\\over moves};
+  \draw[arr] (in) |- (h); \draw[arr] (in) |- (fl);
+  \draw[arr] (fl) -- (fc); \draw[arr] (fc) -- (sum);
+  \draw[arr] (sum) -| (o); \draw[arr] (h) -| (o);
+\end{tikzpicture}
+\caption{Baselines. The linear model (\linParams{} parameters) scores a move as a from-square term plus a
+to-square term, both linear in the input, and is trained with the same masked cross-entropy as the CNN.}
+\label{fig:baselines}
+\end{figure}
+
+% ---------- Primary model ----------
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=3mm]
+  \node[io] (in) {Board +\\band one-hot\\$22{\times}8{\times}8$};
+  \node[conv, right=of in] (stem) {Conv $3{\times}3$\\\chW{} ch\\BN, ReLU};
+  \node[conv, right=of stem, text width=24mm] (tower)
+    {\nBlocks{}$\times$ residual block:\\[1pt] conv$3{\times}3$-BN-ReLU-\\conv$3{\times}3$-BN, $+x$, ReLU};
+  \node[conv, right=of tower] (head) {Conv $3{\times}3$\\BN, ReLU\\Conv $1{\times}1$\\$\to$ 64 ch};
+  \node[out, right=of head, text width=17mm] (o) {64 (to) $\times$ 64\\(from) = 4096\\logits $\to$ mask\\$\to$ softmax};
+  \draw[arr] (in) -- (stem); \draw[arr] (stem) -- (tower); \draw[arr] (tower) -- (head); \draw[arr] (head) -- (o);
+  \node[font=\tiny, below=0.5mm of tower] {all maps stay $8{\times}8$ (no pooling)};
+  \node[font=\tiny, below=0.5mm of head, xshift=4mm] {channel $t$ at square $f$ = logit$(f{\to}t)$};
+\end{tikzpicture}
+\caption{Primary model (\cnnParams{} parameters). The policy head is fully convolutional: each square's
+feature vector, which already sees the whole board, scores the 64 possible destination squares. The v1
+network from the proposal instead used a $2048{\to}4096$ fully connected layer that held 97\% of its
+\vOneParams{} parameters and overfit after \bestEpVOne{} epochs.}
+\label{fig:model}
+\end{figure}

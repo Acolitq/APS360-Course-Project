@@ -7,12 +7,24 @@ a CNN predicts the move a human in that band would play, as a probability distri
 
 | Path | Contents |
 | --- | --- |
-| `notebooks/aps360_progress.ipynb` | Full progress-report pipeline: stream a Lichess monthly dump, filter, encode, split by game, baselines, CNN, figures, new-month test. Run top to bottom on a Colab GPU (~20–30 min). |
-| `results/progress/results.json` | Every number from the progress run (config, data stats, test metrics, learning curves). |
-| `results/progress/numbers.tex` | The same numbers as LaTeX macros for the report. |
-| `figures/progress/` | Data statistics, learning curves / per-band accuracy, and qualitative examples. |
+| `notebooks/aps360_progress.ipynb` | **v2** progress pipeline (current). Run top to bottom on a Colab T4 GPU, about 60–80 min. Writes figures, `results.json`, `numbers.tex` and model weights to `progress_outputs.zip`. |
+| `notebooks/aps360_progress_v1.ipynb` | v1 pipeline that produced `results/progress_v1` and `figures/progress_v1`. |
+| `results/progress_v1/` | v1 run: every number (`results.json`) and LaTeX macros (`numbers.tex`). |
+| `figures/progress_v1/` | v1 figures. |
+| `report/diagrams.tex` | TikZ diagrams of the baselines and the primary model. |
+| `report/snippets.tex` | Paste-ready report text, table and figure blocks. All numbers are macros from `numbers.tex`. |
 
-## Progress-run summary (train month 2025-01, final test on 2025-02)
+## v2 changes (in response to the v1 results)
+
+| v1 finding | v2 change |
+| --- | --- |
+| CNN overfit after epoch 3 (val loss 2.39 → 3.51); 97% of its 8.6M parameters sat in one 2048→4096 FC layer | Residual CNN (6 blocks, 128 channels) with a fully convolutional from–to policy head, about 2.0M parameters; cosine LR decay; v1 still trained for comparison |
+| Band input did not help (31.4% with band vs 32.5% without; shuffled band 31.2%), single seed | 3 seeds per variant, paired game-bootstrap CI on the band gain, band-X-tested-on-band-Y matrix, mean (not only max) band effect |
+| 349k positions vs ~2M planned; all games from the first hours of 1 Jan | 12,000 games per band, each eligible game kept with probability 0.25 to widen the time window; time span recorded |
+| Split by game only | Hashed player IDs; accuracy reported separately for test games whose players never appear in training |
+| Figures 11 in wide (fonts ~4 pt in the report), legend over bars | Figures drawn at 5.5 in (ICLR text width), 7–8 pt fonts, legends outside, kept epoch marked; PDF and PNG |
+
+## v1 results (train month 2025-01, final test on 2025-02)
 
 | Model | Test top-1 | Test top-3 | Test CE | New-month top-1 |
 | --- | --- | --- | --- | --- |
@@ -27,3 +39,4 @@ a CNN predicts the move a human in that band would play, as a probability distri
 ## Data
 
 [Lichess open database](https://database.lichess.org) (CC0). The dataset is not committed; the notebook rebuilds it.
+Usernames are never stored, only one-way hashes used for the player-overlap check.
