@@ -1,0 +1,36 @@
+% Drop-in replacement for Figure 1 of the progress report (v1 model). It shows the data pipeline, the CNN
+% layer by layer with its parameter count, and both baselines, so it covers the rubric's
+% "diagram of the baseline" and "diagram of the primary model".
+% Preamble needs:  \usepackage{tikz}  \usetikzlibrary{positioning,arrows.meta}
+% Numbers are hard-coded from results/progress_v1/results.json.
+\begin{figure}[h]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  node distance=4mm,
+  blk/.style={draw, rounded corners=2pt, align=center, font=\scriptsize, minimum height=11mm, inner sep=2pt},
+  arr/.style={-{Stealth[length=1.6mm]}, thick}]
+  % --- data + primary model (top row) ---
+  \node[blk, fill=blue!6]    (data) {Lichess PGN\\filter, 5 bands\\sample positions};
+  \node[blk, fill=green!8,  right=of data] (in)   {Board + band\\$22{\times}8{\times}8$};
+  \node[blk, fill=orange!15, right=of in]  (stem) {Conv $3{\times}3$\\$22{\to}64$\\BN, ReLU};
+  \node[blk, fill=orange!15, right=of stem](body) {$6\times$ [Conv $3{\times}3$\\$64{\to}64$, BN, ReLU]\\$8{\times}8$ kept, no pooling};
+  \node[blk, fill=orange!15, right=of body](head) {Conv $1{\times}1$\\$64{\to}32$, ReLU\\flatten 2048};
+  \node[blk, fill=orange!15, right=of head](fc)   {FC\\$2048{\to}4096$\\(8.4M params)};
+  \node[blk, fill=red!8,     right=of fc]  (out)  {4096 from--to\\logits: mask\\illegal, softmax};
+  \foreach \p/\q in {data/in, in/stem, stem/body, body/head, head/fc, fc/out} \draw[arr] (\p) -- (\q);
+  \node[font=\scriptsize, above=1mm of body] {\textbf{Primary CNN} (8.6M parameters)};
+  % --- baselines (bottom row): both read the same 22x8x8 input ---
+  \node[blk, fill=gray!15, below=6mm of in.south east, anchor=north west, xshift=4mm, text width=33mm] (heur)
+    {\textbf{Capture heuristic} (no learning): take the most valuable piece, else a random legal move};
+  \node[blk, fill=blue!10, right=4mm of heur, text width=46mm] (lin)
+    {\textbf{Linear baseline} (180k params): flatten 1408 $\to$ Linear $\to$ 128 =
+     64 from-scores $a$ + 64 to-scores $b$;\ \ score$(f{\to}t)=a_f+b_t$};
+  \draw[arr] (in.south) |- (heur.west);
+  \draw[arr] (in.south) |- ([yshift=-2mm]heur.south east) -| (lin.south);
+  \draw[arr] (lin.east) -| (out.south);
+\end{tikzpicture}}
+\caption{Pipeline and models. Top: the primary CNN; 97\% of its parameters are in the final FC layer. Bottom: the two
+baselines. The linear model is trained with the same masked cross-entropy as the CNN; the heuristic outputs a single move.}
+\label{fig:pipeline}
+\end{figure}
